@@ -9,16 +9,17 @@ var extensions_url = "https://oceanwide.s3.amazonaws.com/extensions/" + language
 
 $( document ).ready(function() {
   var TEMPLATE = function () { /*
+   <div>
    <table style="width:100%;border:0px;margin:0 auto;">
    <tbody>
    <tr>
    <td style="width:70%">
-   <textarea id="citb-block{{index}}" onkeypress="return handlecr(this ,event)" style="width:100%;">
+   <textarea id="citb-block{{index}}" onkeypress="return handleCR(this ,event)" style="width:100%;">
    {{content}}
 
    </textarea>
    <br>
-   <input onclick="evaluateclear('citb-block{{index}}')" type="button" value="run">
+   <input onclick="evaluateClear('citb-block{{index}}')" type="button" value="run">
    </td>
    <td style="width:30%;vertical-align:top;text-align:left;padding:10px;">
    <div id="citb-block{{index}}-output">
@@ -27,6 +28,7 @@ $( document ).ready(function() {
    </tr>
    </tbody>
    </table>
+   </div>
    */
   }.toString().slice(18, -6);
   $(".language-" + language).each(function(index) {
