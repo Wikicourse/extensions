@@ -32,3 +32,11 @@ The following preamble should be included in your main javascript file `CHANGEME
 
 As you can see the preamble includes the HTML template that will get injected into the website.
 Please include all your dependencies under one directory with the same name as the main javascript file.
+
+Usually, any contents will show in a half page unless it has class attribute "fullScreenDisplay"
+
+    <div class="fullScreenDisplay">
+        <textarea>...</textarea>
+    </div>
+
+More detailed explanation and examples for "fullScreenDisplay" will be added later.
