@@ -205,7 +205,8 @@
                 // Create nav item with label and add subnav
                 nav = __.obj('li', {
                     'data-type': pseudoType || type,
-                    class: 'editr__nav-item' + (data.files[type].length > 1 ? ' is-dropped' : '')
+                    class: 'editr__nav-item'
+                    // class: 'editr__nav-item' + (data.files[type].length > 1 ? ' is-dropped' : '')
                 }).append(__.obj('span', {
                     class: 'editr__nav-label',
                     text: label
@@ -242,8 +243,7 @@
 
                 return __.obj('iframe', {
                     class: 'editr__result',
-                    name: 'editr_' + get.randomID(),
-                    src: opts.path + '/index.html'
+                    name: 'editr_' + get.randomID()
                 }).load(function() {
                     el.preview.result = $(this);
                     el.preview.body = el.preview.result.contents().find('body');
@@ -339,11 +339,11 @@
                 aceEditor.setOption("enableEmmet", true);
                 aceEditor.getSession().setUseWorker(false);
 
-                aceEditor.on('change', _.debounce(function() {
-                    if (data.activeItem !== -1) {
-                        __.renderPreview(data.files.html[data.activeItem]);
-                    }
-                }, 250, false));
+                //aceEditor.on('change', _.debounce(function() {
+                    //if (data.activeItem !== -1) {
+                        //__.renderPreview(data.files.html[data.activeItem]);
+                    //}
+                //}, 250, false));
 
                 return aceEditor;
             },
@@ -608,7 +608,7 @@
                     file.content = data.gists[file.gistID].files[file.filename].content;
                 }
 
-                if (file.isEncoded || file.isGistFile || file.isDefault) {
+                if (file.isEmbedded || file.isEncoded || file.isGistFile || file.isDefault) {
                     content = file.content;
                 }
 
@@ -654,14 +654,15 @@
                         $(fileCSS.editor.container).addClass('editr__editor--invalid').attr('data-error', e.message);
                     }
                 }
+                var consoleDiv = '<div class="as-console-wrapper as-console-timestamps"><div class="as-console"></div></div>';
 
                 // Add HTML
                 el.preview.body.html(
-                    file.editor.getValue()
+                    file.editor.getValue() + consoleDiv
                 );
 
                 // Add js
-                for (var j = 0; j < data.files.js.length; j++) {
+                for (var j = data.files.js.length-1; j > -1; j--) {
                     fileJS = data.files.js[j];
 
                     // Remove js error flag
@@ -680,6 +681,51 @@
 
         // Getters
         var get = {
+            parseHTML: function() {
+                var parsed = editor.text().split(
+                  /\s*<!--(?:[\s\S]*?)\b(\w+)\b[\s\W]*-->\s*/);
+                var parsedObj = {
+                    'html': [],
+                    'css':[],
+                    'js':[]
+                };
+                var currentType = null;
+                for (var i in parsed)  {
+                    var token = parsed[i].toLowerCase();
+                    if (token == "javascript") {
+                        token = "js"
+                    }
+                    if (Object.keys(parsedObj).indexOf(token) !== -1) {
+                        currentType = token;
+                        parsedObj[currentType].push('')
+                    } else if (!!currentType) {
+                        var lastIndex = parsedObj[currentType].length - 1;
+                        parsedObj[currentType][lastIndex] += token
+                    }
+                }
+                for (var type in parsedObj) {
+                    for (var j in parsedObj[type]) {
+                        var file = {
+                            id: data.files[type].length,
+                            content: parsedObj[type][j],
+                            type: type,
+                            filename: j + '.' + type,
+                            extension: type,
+                            parser: null,
+                            isHidden: false,
+                            isDefault: null,
+                            isGist: false,
+                            isGistFile: false,
+                            gistID: null,
+                            isEncoded: false,
+                            isEmbedded: true
+                        };
+                        data.files[type].push(file);
+                    }
+                }
+                editor.text('');
+                return !!parsed
+            },
             /**
              * Get editr files
              * @param  {string} type
@@ -754,8 +800,12 @@
              * @param  {object} file
              */
             fileContent: function(file) {
+                if (file.isEmbedded) {
+                    __.fileContentCallback(file);
+                    return;
+                }
                 // If File is encoded or it's file from  gist then it's already loaded
-                if (file.isEncoded || file.isGistFile || file.isDefault) {
+                else if (file.isEncoded || file.isGistFile || file.isDefault) {
                     __.fileContentCallback(file);
                     return;
                 }
@@ -922,12 +972,11 @@
         var init = function() {
             // Get project name
             data.item = editor.data('item');
-
             // Get project files
-            get.files('html', true);
-            get.files('css', true);
-            get.files('js', true);
-
+                get.parseHTML();
+                get.files('html', true);
+                get.files('css', true);
+                get.files('js', true);
             // Count files
             data.filesTotal =
                 data.files['html'].length +
