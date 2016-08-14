@@ -3,12 +3,12 @@
  */
 var language = "jsfiddle";
 var extension_url = "https://oceanwide.s3.amazonaws.com/extensions/" + language;
-//var extension_url = "/dwiki/extensions/" + language;
+// var extension_url = "/dwiki/extensions/" + language;
 $( document ).ready(function() {
     var TEMPLATE = function () { /*
       <div class="editr editr--light" data-view="single" data-theme="chrome" 
         data-path="{{extension_url}}/includes" 
-        data-files-js="!console.min.js;!bootstrap.min.js" 
+        data-files-js="!console.min.js;!fillAssert.js;!tape.min.js;!lodash.min.js;!jquery.min.js;!bootstrap.min.js" 
         data-files-html="!index.html" 
         data-files-css="!bootstrap.min.css" >{{content}}</div>
    */

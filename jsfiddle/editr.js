@@ -65,6 +65,13 @@
                         return str;
                     }
                 },
+                'test': {
+                    type: 'js',
+                    extension: 'js',
+                    fn: function(str) {
+                        return str;
+                    }
+                },
                 'css': {
                     type: 'css',
                     extension: 'css',
@@ -144,6 +151,7 @@
             gists: {},
             filesLoaded: 0,
             files: {
+                test: [],
                 html: [],
                 css: [],
                 js: []
@@ -186,6 +194,7 @@
                 navs.push(build.navList('html', 'HTML'));
                 navs.push(build.navList('css', 'CSS'));
                 navs.push(build.navList('js', 'JavaScript'));
+                navs.push(build.navList('test', 'Test'));
 
                 return __.obj('ul', {
                     class: 'editr__nav'
@@ -627,7 +636,7 @@
             },
 
             renderPreview: function(file) {
-                var fileCSS, fileJS;
+                var fileCSS, fileJS, testJS, testScript;
                 data.activeItem = file.id;
 
                 if (!file) return;
@@ -664,17 +673,27 @@
                 // Add js
                 for (var j = data.files.js.length-1; j > -1; j--) {
                     fileJS = data.files.js[j];
+                    testJS = data.files.test[j];
+                    if (j == 0 && testJS) {
+                        // testScript = "tape.createStream({ objectMode: true }).on('data', function (row) { if (row.ok) { console.log(row['name']) } }); tape('test', assert => {" + 
+                        testScript = "\ntape('Todo:', assert => { " +
+                          "assert = fillAssert(assert);\n" +
+                          opts.parsers[testJS.extension].fn(testJS.editor.getValue()) + "});";
+                    } else {
+                        testScript = ""
+                    }
 
                     // Remove js error flag
                     $(fileJS.editor.container).removeClass('editr__editor--invalid').removeAttr('data-error');
 
                     try {
                         el.preview.result[0].contentWindow.eval(
-                            opts.parsers[fileJS.extension].fn(fileJS.editor.getValue())
+                            opts.parsers[fileJS.extension].fn(fileJS.editor.getValue()) + testScript
                         );
                     } catch (e) {
                         $(fileJS.editor.container).addClass('editr__editor--invalid').attr('data-error', 'Error: ' + e.message);
                     }
+
                 }
             }
         };
@@ -685,6 +704,7 @@
                 var parsed = editor.text().split(
                   /\s*<!--(?:[\s\S]*?)\b(\w+)\b[\s\W]*-->\s*/);
                 var parsedObj = {
+                    'test': [],
                     'html': [],
                     'css':[],
                     'js':[]
@@ -700,7 +720,7 @@
                         parsedObj[currentType].push('')
                     } else if (!!currentType) {
                         var lastIndex = parsedObj[currentType].length - 1;
-                        parsedObj[currentType][lastIndex] += token
+                        parsedObj[currentType][lastIndex] += parsed[i];
                     }
                 }
                 for (var type in parsedObj) {
