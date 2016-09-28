@@ -1,6 +1,5 @@
 // MIT License, see: https://github.com/gh-canon/stack-snippet-console/blob/master/LICENSE
 
-    debugger;
     var win = window.document.getElementsByTagName("iframe")[0].contentWindow;
     var doc = window.document.getElementsByTagName("iframe")[0].contentDocument;
     

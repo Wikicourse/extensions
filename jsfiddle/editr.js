@@ -196,6 +196,7 @@
                 navs.push(build.navList('js', 'JavaScript'));
                 navs.push(build.navList('test', 'Test'));
 
+
                 return __.obj('ul', {
                     class: 'editr__nav'
                 }).append(navs);
@@ -230,6 +231,9 @@
                     if (files[i].isHidden) {
                         continue;
                     }
+                    else if (files[i].isDefault && label !== "Result"){
+                        return;
+                    }
 
                     subnav.append(__.obj('li', {
                         'data-id': i,
@@ -252,7 +256,8 @@
 
                 return __.obj('iframe', {
                     class: 'editr__result',
-                    name: 'editr_' + get.randomID()
+                    name: 'editr_' + get.randomID(),
+                    sandbox: 'allow-same-origin'
                 }).load(function() {
                     el.preview.result = $(this);
                     el.preview.body = el.preview.result.contents().find('body');
@@ -337,7 +342,6 @@
                         class: 'editr__editor editr__editor--' + (file.type || file.extension)
                     }).appendTo(el.content);
 
-                require("ace/ext/emmet");
 
                 aceEditor = ace.edit(textarea.attr('id'));
                 aceEditor.setTheme("ace/theme/" + opts.theme);
@@ -630,13 +634,17 @@
                 if (file.extension === 'html') {
                     content = opts.parsers[file.extension].fn(content || file.content || '', file.isEncoded);
                 }
-
-                file.editor.session.setValue(content);
-                file.editor.clearSelection();
+                if (file.isEmbedded || file.isEncoded || file.isGistFile || file.isDefault) {
+                    file.editor.session.setValue(content);
+                    file.editor.clearSelection();
+                }
+                else {
+                    file.content = content;
+                }
             },
 
             renderPreview: function(file) {
-                var fileCSS, fileJS, testJS, testScript;
+                var fileCSS, fileJS, testJS, testScript, userCode;
                 data.activeItem = file.id;
 
                 if (!file) return;
@@ -675,7 +683,8 @@
                     fileJS = data.files.js[j];
                     testJS = data.files.test[j];
                     if (j == 0 && testJS) {
-                        // testScript = "tape.createStream({ objectMode: true }).on('data', function (row) { if (row.ok) { console.log(row['name']) } }); tape('test', assert => {" + 
+                        // testScript = "tape.createStream({ objectMode: true }).on('data', function (row) { if (row.ok) { console.log(row['name']) } }); tape('test', assert => {" +
+                        // testScript = "tape.createStream({ objectMode: true }).on('data', function (row) { if (row.ok) { console.log(row['name']) } }); tape('test', assert => {" +
                         testScript = "\ntape('Todo:', assert => { " +
                           "assert = fillAssert(assert);\n" +
                           opts.parsers[testJS.extension].fn(testJS.editor.getValue()) + "});";
@@ -686,12 +695,22 @@
                     // Remove js error flag
                     $(fileJS.editor.container).removeClass('editr__editor--invalid').removeAttr('data-error');
 
-                    try {
-                        el.preview.result[0].contentWindow.eval(
-                            opts.parsers[fileJS.extension].fn(fileJS.editor.getValue()) + testScript
-                        );
-                    } catch (e) {
-                        $(fileJS.editor.container).addClass('editr__editor--invalid').attr('data-error', 'Error: ' + e.message);
+                    if (j == 0) {
+                        var userCode = "\nvar code=decodeURIComponent(\"" + encodeURIComponent(fileJS.editor.getValue()) + "\");";
+                        try {
+                            el.preview.result[0].contentWindow.eval(
+                              opts.parsers[fileJS.extension].fn(fileJS.editor.getValue()) + userCode + testScript);
+                        } catch (e) {
+                            $(fileJS.editor.container).addClass('editr__editor--invalid').attr('data-error', 'Error: ' + e.message);
+                        }
+                    } else {
+                        try {
+                            el.preview.result[0].contentWindow.eval(
+                              opts.parsers[fileJS.extension].fn(fileJS.content)
+                            );
+                        } catch (e) {
+                            $(fileJS.editor.container).addClass('editr__editor--invalid').attr('data-error', 'Error: ' + e.message);
+                        }
                     }
 
                 }
@@ -831,7 +850,7 @@
                 }
 
                 $.ajax({
-                    url: [opts.path, data.item, file.filename].join('/'),
+                    url: [opts.path, data.item].join('/') + file.filename,
                     success: function(response) {
                         __.fileContentCallback(file, response);
                     },
@@ -941,6 +960,7 @@
                     navItems = tabs.find('.editr__subnav').children();
 
                 tabs.children('.editr__nav-label').on('click', function() {
+                    event.preventDefault();
                     $(this).next().children().first().trigger('click');
                 });
 
@@ -1003,9 +1023,10 @@
                 data.files['css'].length +
                 data.files['js'].length;
 
-            get.gistsData(function() {
-                build.ui();
-            });
+            build.ui();
+            // get.gistsData(function() {
+            //     build.ui();
+            // });
         };
 
         // Kick it off
