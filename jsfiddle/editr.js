@@ -134,7 +134,7 @@
             callback: function() {}
         }, opts);
 
-        var htmlOpts = ['path', 'readonly', 'theme', 'view', 'wrap'];
+        var htmlOpts = ['path', 'readonly', 'theme', 'view', 'wrap', 'libs'];
 
         // Extend js options with options from html data- attributes
         for (var i = 0; i < htmlOpts.length; i++) {
@@ -231,9 +231,6 @@
                     if (files[i].isHidden) {
                         continue;
                     }
-                    else if (files[i].isDefault && label !== "Result"){
-                        return;
-                    }
 
                     subnav.append(__.obj('li', {
                         'data-id': i,
@@ -257,7 +254,7 @@
                 return __.obj('iframe', {
                     class: 'editr__result',
                     name: 'editr_' + get.randomID(),
-                    sandbox: 'allow-same-origin'
+                    sandbox: 'allow-same-origin allow-scripts'
                 }).load(function() {
                     el.preview.result = $(this);
                     el.preview.body = el.preview.result.contents().find('body');
@@ -281,7 +278,10 @@
                         $.each(opts.libs, function(i, url){
                             if (!url || typeof url !== 'string') return;
                             var elem, ext = rExt.exec(url) && RegExp.$1;
-                            if (!ext) return;
+                            if (!ext) {
+                                // For wzrd.in file
+                                ext = 'js'
+                            }
                             if (ext === 'js') {
                                 elem = doc.createElement('script');
                                 elem.src = url;
@@ -314,13 +314,13 @@
                     file;
 
                 // Loop through categories
-                $.each(data.files, function(extension, files) {
+                $.each(data.files, function(type, files) {
                     $.each(files, function(id, file) {
-                        editors[extension] = editors[extension] || [];
+                        editors[type] = editors[type] || [];
 
                         // Build editor and push it to file data
-                        editors[extension].push(
-                            data.files[extension][id].editor = build.editor(file, id)
+                        editors[type].push(
+                            data.files[type][id].editor = build.editor(file, id)
                         );
 
                         get.fileContent(file);
@@ -350,6 +350,7 @@
                 aceEditor.setReadOnly(opts.readonly);
                 aceEditor.setWrapBehavioursEnabled(true);
                 aceEditor.setOption("enableEmmet", true);
+                aceEditor.$blockScrolling = Infinity;
                 aceEditor.getSession().setUseWorker(false);
 
                 //aceEditor.on('change', _.debounce(function() {
@@ -631,6 +632,7 @@
                     onLoaded.init();
                 }
 
+                // TODO: is this really needed? file.content is assigned already
                 if (file.extension === 'html') {
                     content = opts.parsers[file.extension].fn(content || file.content || '', file.isEncoded);
                 }
@@ -671,11 +673,9 @@
                         $(fileCSS.editor.container).addClass('editr__editor--invalid').attr('data-error', e.message);
                     }
                 }
-                var consoleDiv = '<div class="as-console-wrapper as-console-timestamps"><div class="as-console"></div></div>';
-
                 // Add HTML
                 el.preview.body.html(
-                    file.editor.getValue() + consoleDiv
+                    file.editor.getValue()
                 );
 
                 // Add js
@@ -683,8 +683,6 @@
                     fileJS = data.files.js[j];
                     testJS = data.files.test[j];
                     if (j == 0 && testJS) {
-                        // testScript = "tape.createStream({ objectMode: true }).on('data', function (row) { if (row.ok) { console.log(row['name']) } }); tape('test', assert => {" +
-                        // testScript = "tape.createStream({ objectMode: true }).on('data', function (row) { if (row.ok) { console.log(row['name']) } }); tape('test', assert => {" +
                         testScript = "\ntape('Todo:', assert => { " +
                           "assert = fillAssert(assert);\n" +
                           opts.parsers[testJS.extension].fn(testJS.editor.getValue()) + "});";
@@ -719,14 +717,14 @@
 
         // Getters
         var get = {
-            parseHTML: function() {
+            parseCodeblock: function() {
                 var parsed = editor.text().split(
                   /\s*<!--(?:[\s\S]*?)\b(\w+)\b[\s\W]*-->\s*/);
                 var parsedObj = {
-                    'test': [],
-                    'html': [],
-                    'css':[],
-                    'js':[]
+                    'html': '',
+                    'css':'',
+                    'js':'',
+                    'test': ''
                 };
                 var currentType = null;
                 for (var i in parsed)  {
@@ -734,33 +732,31 @@
                     if (token == "javascript") {
                         token = "js"
                     }
+                    // Set the token type defined in the HTML comment
                     if (Object.keys(parsedObj).indexOf(token) !== -1) {
                         currentType = token;
-                        parsedObj[currentType].push('')
+                    // Add the content to the corresponding list (until a new token is seen)
                     } else if (!!currentType) {
-                        var lastIndex = parsedObj[currentType].length - 1;
-                        parsedObj[currentType][lastIndex] += parsed[i];
+                        parsedObj[currentType] += parsed[i];
                     }
                 }
                 for (var type in parsedObj) {
-                    for (var j in parsedObj[type]) {
-                        var file = {
-                            id: data.files[type].length,
-                            content: parsedObj[type][j],
-                            type: type,
-                            filename: j + '.' + type,
-                            extension: type,
-                            parser: null,
-                            isHidden: false,
-                            isDefault: null,
-                            isGist: false,
-                            isGistFile: false,
-                            gistID: null,
-                            isEncoded: false,
-                            isEmbedded: true
-                        };
-                        data.files[type].push(file);
-                    }
+                    var file = {
+                        id: data.files[type].length,
+                        content: parsedObj[type],
+                        type: type,
+                        filename: 'edit.' + type,
+                        extension: type == 'test' ? 'js' : type,
+                        parser: null,
+                        isHidden: false,
+                        isDefault: null,
+                        isGist: false,
+                        isGistFile: false,
+                        gistID: null,
+                        isEncoded: false,
+                        isEmbedded: true
+                    };
+                    data.files[type].push(file);
                 }
                 editor.text('');
                 return !!parsed
@@ -795,6 +791,8 @@
                 }
 
                 // All files hidden? add default empty file
+                // an empty file is required to attach an editor to the object
+                // this editor will be used by the user then.
                 if (hiddenFilesTotal === data.files[type].length) {
                     __.addFile(type, 'index.' + type, true);
                 }
@@ -1013,15 +1011,17 @@
             // Get project name
             data.item = editor.data('item');
             // Get project files
-                get.parseHTML();
+                get.parseCodeblock();
                 get.files('html', true);
                 get.files('css', true);
                 get.files('js', true);
+                get.files('test', true);
             // Count files
             data.filesTotal =
                 data.files['html'].length +
                 data.files['css'].length +
-                data.files['js'].length;
+                data.files['js'].length +
+                data.files['test'].length;
 
             build.ui();
             // get.gistsData(function() {

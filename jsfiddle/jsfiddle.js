@@ -3,15 +3,17 @@
  */
 
 var language = "jsfiddle";
-//var extension_url = "https://oceanwide.s3.amazonaws.com/extensions/" + language;
-var extension_url = "/static/extensions/" + language;
+var extension_url = "https://oceanwide.s3.amazonaws.com/extensions/" + language;
+// var extension_url = "/static/extensions/" + language;
 $( document ).ready(function() {
     var TEMPLATE = function () { /*
       <div class="editr editr--light" data-view="single" data-theme="chrome"
-        data-path="{{extension_url}}/includes"
-        data-files-js="!console.min.js;!fillAssert.js;!tape.min.js;!lodash.min.js;!jquery.min.js;!bootstrap.min.js"
-        data-files-html="!index.html"
-        data-files-css="!bootstrap.min.css" >{{content}}</div>
+      data-path="{{extension_url}}/includes"
+        data-files-js="!console.min.js;!fillAssert.js;!tape.min.js;!lodash.min.js;!jquery.min.js"
+        data-libs='["https://code.jquery.com/jquery-1.12.4.min.js",
+        "https://maxcdn.bootstrapcdn.com/bootstrap/latest/js/bootstrap.min.js",
+        "https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css"
+        ]' >{{content}}</div>
    */
   }.toString().slice(18, -6);
   // Make sure all files are hidden with '!' prefix, otherwise, data parsed from HTML will not show up.

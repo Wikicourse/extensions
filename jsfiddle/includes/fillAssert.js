@@ -1,4 +1,5 @@
-tape.createStream({ objectMode: true }).on('data', 
+
+tape.createStream({ objectMode: true }).on('data',
   function (row) { 
     if (!row.ok) { 
       console.log(row['name']) 
@@ -15,6 +16,17 @@ function createIsAssert(t, isThing) {
 }
 
 function fillAssert(t) {
+  try {
+    var test = tape;
+    var test = _;
+    var test = $;
+    var test = fillAssert(t);
+  } catch (e) {
+    if (e instanceof ReferenceError) {
+      console.log('Click on "Result" on left top corner to check your work');
+    }
+    return function(){};
+  }
   // TODO: extend tape so that its default function can also be used
   const assert = t.assert;
 
