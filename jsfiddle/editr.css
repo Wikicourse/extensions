@@ -240,6 +240,17 @@
     top: 40%;
 }
 
+
+.editr-view--split .editr__editor.active {
+    width: 40%;
+    height: 100%;
+    border-right: 1px solid #BBC0CA;
+}
+.editr-view--split .editr__result {
+    width: 60%;
+    left: 40%;
+}
+
 /** View - Vertical */
 /*------------------------------------*/
 .editr-view--vertical .editr__editor.active {

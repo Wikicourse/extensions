@@ -190,7 +190,7 @@
             nav: function() {
                 var navs = [];
 
-                navs.push(build.navList('html', 'Result', 'result'));
+                navs.push(build.navList('html', 'Run (Ctrl-Enter)', 'result'));
                 navs.push(build.navList('html', 'HTML'));
                 navs.push(build.navList('css', 'CSS'));
                 navs.push(build.navList('js', 'JavaScript'));
@@ -215,7 +215,7 @@
                 // Create nav item with label and add subnav
                 nav = __.obj('li', {
                     'data-type': pseudoType || type,
-                    class: 'editr__nav-item'
+                    class: 'editr__nav-item' + (files[0].isActive ? ' active' : '')
                     // class: 'editr__nav-item' + (data.files[type].length > 1 ? ' is-dropped' : '')
                 }).append(__.obj('span', {
                     class: 'editr__nav-label',
@@ -252,7 +252,7 @@
                 var index = data.files.html[0];
 
                 return __.obj('iframe', {
-                    class: 'editr__result',
+                    class: 'editr__result' + (opts.view == 'split' ? ' active' : ''),
                     name: 'editr_' + get.randomID(),
                     sandbox: 'allow-same-origin allow-scripts'
                 }).load(function() {
@@ -339,7 +339,7 @@
                 var aceEditor,
                     textarea = __.obj('div', {
                         id: 'editr_' + get.randomID(),
-                        class: 'editr__editor editr__editor--' + (file.type || file.extension)
+                        class: 'editr__editor editr__editor--' + (file.type || file.extension) + (file.isActive ? ' active ace_focus' :  '')
                     }).appendTo(el.content);
 
 
@@ -352,6 +352,14 @@
                 aceEditor.setOption("enableEmmet", true);
                 aceEditor.$blockScrolling = Infinity;
                 aceEditor.getSession().setUseWorker(false);
+                aceEditor.commands.addCommand({
+                    name: 'Run',
+                    bindKey: {win: 'Ctrl-Enter',  mac: 'Command-Enter'},
+                    exec: function (editor) {
+                      $("#" + editor.container.id).parent().siblings("header").find("ul li").children()[0].click()
+                    },
+                    readOnly: true
+                });
 
                 //aceEditor.on('change', _.debounce(function() {
                     //if (data.activeItem !== -1) {
@@ -646,7 +654,7 @@
             },
 
             renderPreview: function(file) {
-                var fileCSS, fileJS, testJS, testScript, userCode;
+                var fileCSS, fileJS, testJS, testScript, tests, lines;
                 data.activeItem = file.id;
 
                 if (!file) return;
@@ -683,9 +691,12 @@
                     fileJS = data.files.js[j];
                     testJS = data.files.test[j];
                     if (j == 0 && testJS) {
-                        testScript = "\ntape('Todo:', assert => { " +
-                          "assert = fillAssert(assert);\n" +
-                          opts.parsers[testJS.extension].fn(testJS.editor.getValue()) + "});";
+                        lines = testJS.editor.getValue().split('\n');
+                        tests = "var assert = chai.assert\n ";
+                        for (var i=0; i < lines.length;i++) {
+                            tests += "try {" + lines[i] + "} catch(e) { console.log(e['message']); }" + "\n"
+                        }
+                        testScript = opts.parsers[testJS.extension].fn(tests)
                     } else {
                         testScript = ""
                     }
@@ -718,6 +729,7 @@
         // Getters
         var get = {
             parseCodeblock: function() {
+                var activeType = null;
                 var parsed = editor.text().split(
                   /\s*<!--(?:[\s\S]*?)\b(\w+)\b[\s\W]*-->\s*/);
                 var parsedObj = {
@@ -735,6 +747,9 @@
                     // Set the token type defined in the HTML comment
                     if (Object.keys(parsedObj).indexOf(token) !== -1) {
                         currentType = token;
+                        if (token != "test") {
+                           activeType = token;
+                        }
                     // Add the content to the corresponding list (until a new token is seen)
                     } else if (!!currentType) {
                         parsedObj[currentType] += parsed[i];
@@ -754,7 +769,8 @@
                         isGistFile: false,
                         gistID: null,
                         isEncoded: false,
-                        isEmbedded: true
+                        isEmbedded: true,
+                        isActive: type == activeType
                     };
                     data.files[type].push(file);
                 }
@@ -969,7 +985,9 @@
 
                     event.preventDefault();
 
-                    el.nav.find('.active').removeClass('active');
+                    if (item.data('type') != 'result') {
+                        el.nav.find('.active').removeClass('active');
+                    }
 
                     item.closest('.editr__nav-item').andSelf().addClass('active');
 
@@ -979,6 +997,8 @@
 
                         if (__.isPaneled()) {
                             el.preview.frame.addClass('active');
+                        } else if (opts.view == "split")    {
+
                         } else {
                             el.preview.frame.addClass('active').siblings().removeClass('active');
                         }
@@ -986,6 +1006,10 @@
                         aceEditor = get.editor(item.data('type'), item.data('id'));
 
                         $(aceEditor.container).addClass('active').siblings(__.isPaneled() ? '.editr__editor--' + item.data('type') : '').removeClass('active');
+                        if (opts.view == "split")    {
+                            el.preview.frame.addClass('active');
+                        }
+
 
                         aceEditor.focus();
 

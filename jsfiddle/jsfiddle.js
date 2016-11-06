@@ -7,11 +7,12 @@ var extension_url = "https://oceanwide.s3.amazonaws.com/extensions/" + language;
 // var extension_url = "/static/extensions/" + language;
 $( document ).ready(function() {
     var TEMPLATE = function () { /*
-      <div class="editr editr--light" data-view="single" data-theme="chrome"
+      <div class="editr editr--light" data-view="split" data-theme="chrome"
       data-path="{{extension_url}}/includes"
-        data-files-js="!console.min.js;!fillAssert.js;!tape.min.js;!lodash.min.js;!jquery.min.js"
+        data-files-js="!console.min.js;!jquery.min.js"
         data-libs='["https://code.jquery.com/jquery-1.12.4.min.js",
         "https://maxcdn.bootstrapcdn.com/bootstrap/latest/js/bootstrap.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/chai/3.5.0/chai.min.js",
         "https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css"
         ]' >{{content}}</div>
    */
