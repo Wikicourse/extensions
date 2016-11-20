@@ -5,7 +5,10 @@
 var language = "jsfiddle";
 var extension_url = "https://oceanwide.s3.amazonaws.com/extensions/" + language;
 // var extension_url = "/static/extensions/" + language;
-var initJSFiddle = function() {
+
+// var initJSFiddle = function() {
+
+$( document ).ready(function() {
     var TEMPLATE = function () { /*
       <div class="editr editr--light" data-view="split" data-theme="chrome"
       data-path="{{extension_url}}/includes"
@@ -18,14 +21,18 @@ var initJSFiddle = function() {
    */
   }.toString().slice(18, -6);
   // Make sure all files are hidden with '!' prefix, otherwise, data parsed from HTML will not show up.
-  $(".language-" + language).each(function(index) {
-    var content = $(this).text();
-    var compiled_template = Handlebars.compile(TEMPLATE);
-    var rendered = compiled_template({content: content,
-      index: index,
-      extension_url: extension_url});
-    var rendered$ = $(rendered);
-    $(this).parent().replaceWith(rendered$);
-    new Editr({ el: rendered$ });
+  $(".lang-" + language).lazyLoadXT();
+  $(".lang-" + language).each(function(index) {
+    $(this).on("lazyshow", function() {
+      console.log("clicked");
+      var content = $(this).text();
+      var compiled_template = Handlebars.compile(TEMPLATE);
+      var rendered = compiled_template({content: content,
+        index: index,
+        extension_url: extension_url});
+      var rendered$ = $(rendered);
+      $(this).parent().replaceWith(rendered$);
+      new Editr({ el: rendered$ });
+    });
   });
-};
+});

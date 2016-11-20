@@ -255,7 +255,7 @@
                     class: 'editr__result' + (opts.view == 'split' ? ' active' : ''),
                     name: 'editr_' + get.randomID(),
                     sandbox: 'allow-same-origin allow-scripts'
-                }).load(function() {
+                }).on('load', function() {
                     el.preview.result = $(this);
                     el.preview.body = el.preview.result.contents().find('body');
                     el.preview.head = el.preview.result.contents().find('head');
@@ -989,7 +989,7 @@
                         el.nav.find('.active').removeClass('active');
                     }
 
-                    item.closest('.editr__nav-item').andSelf().addClass('active');
+                    item.closest('.editr__nav-item').addBack().addClass('active');
 
                     // Render preview
                     if (item.data('type') === 'result') {
