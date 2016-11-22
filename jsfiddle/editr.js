@@ -732,11 +732,13 @@
                 var activeType = null;
                 var parsed = editor.text().split(
                   /\s*<!--(?:[\s\S]*?)\b(\w+)\b[\s\W]*-->\s*/);
+                var viewTypes = [ 'html', 'css', 'js', 'test' ];
                 var parsedObj = {
                     'html': '',
                     'css':'',
                     'js':'',
-                    'test': ''
+                    'test': '',
+                    'solutions': '',
                 };
                 var currentType = null;
                 for (var i in parsed)  {
@@ -754,25 +756,30 @@
                     } else if (!!currentType) {
                         parsedObj[currentType] += parsed[i];
                     }
+                    else {
+
+                    }
                 }
                 for (var type in parsedObj) {
-                    var file = {
-                        id: data.files[type].length,
-                        content: parsedObj[type],
-                        type: type,
-                        filename: 'edit.' + type,
-                        extension: type == 'test' ? 'js' : type,
-                        parser: null,
-                        isHidden: false,
-                        isDefault: null,
-                        isGist: false,
-                        isGistFile: false,
-                        gistID: null,
-                        isEncoded: false,
-                        isEmbedded: true,
-                        isActive: type == activeType
-                    };
-                    data.files[type].push(file);
+                    if (Object.keys(data.files).indexOf(type) !== -1) {
+                      var file = {
+                          id: data.files[type].length,
+                          content: parsedObj[type],
+                          type: type,
+                          filename: 'edit.' + type,
+                          extension: type == 'test' ? 'js' : type,
+                          parser: null,
+                          isHidden: false,
+                          isDefault: null,
+                          isGist: false,
+                          isGistFile: false,
+                          gistID: null,
+                          isEncoded: false,
+                          isEmbedded: true,
+                          isActive: type == activeType
+                      };
+                      data.files[type].push(file);
+                    }
                 }
                 editor.text('');
                 return !!parsed
