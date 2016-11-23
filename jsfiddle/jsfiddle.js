@@ -6,9 +6,8 @@ var language = "jsfiddle";
 var extension_url = "https://oceanwide.s3.amazonaws.com/extensions/" + language;
 // var extension_url = "/static/extensions/" + language;
 
-// var initJSFiddle = function() {
-
-$( document ).ready(function() {
+var initJsfiddle = function() {
+// $( document ).on("resize", function() {
     var TEMPLATE = function () { /*
       <div class="editr editr--light" data-view="split" data-theme="chrome"
       data-path="{{extension_url}}/includes"
@@ -35,4 +34,4 @@ $( document ).ready(function() {
       new Editr({ el: rendered$ });
     });
   });
-});
+};
