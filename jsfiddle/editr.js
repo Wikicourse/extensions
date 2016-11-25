@@ -731,7 +731,8 @@
             parseCodeblock: function() {
                 var activeType = null;
                 var parsed = editor.text().split(
-                  /\s*<!--(?:[\s\S]*?)\b(\w+)\b[\s\W]*-->\s*/);
+                  // /\s*<!--(?:[\s\S]*?)\b(\w+)\b[\s\W]*-->\s*/);
+                  /\s*<!--(?:\s*?)(\S+)(?:\s*?)-->\s*/);
                 var viewTypes = [ 'html', 'css', 'js', 'test' ];
                 var parsedObj = {
                     'html': '',
@@ -743,13 +744,15 @@
                 var currentType = null;
                 for (var i in parsed)  {
                     var token = parsed[i].toLowerCase();
-                    if (token == "javascript") {
+                    // Set the token type defined in the HTML comment
+                    if (!token) {
+                        continue;
+                    } else if (token == "javascript") {
                         token = "js"
                     }
-                    // Set the token type defined in the HTML comment
-                    if (Object.keys(parsedObj).indexOf(token) !== -1) {
+                    if (/^[a-z0-9]+$/i.test(token) && Object.keys(parsedObj).indexOf(token) !== -1) {
                         currentType = token;
-                        if (token != "test") {
+                        if (token != "test" && token != "solutions") {
                            activeType = token;
                         }
                     // Add the content to the corresponding list (until a new token is seen)
